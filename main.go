@@ -33,14 +33,18 @@ func main() {
 	printGraph(os.Stdout, dependencies)
 }
 
-// getDependencies populates the dependency info in the dependencies recursively.
+// getDependencies populates dependencies recursively.
+//
+// srcDir is the root directory for all golang source code.
+// importPath is like github.com/google/btree. The getDependencies call will populate dependencies which btree package depends on.
 func getDependencies(srcDir, importPath string, dependencies map[string][]string) error {
 	if dependencies[importPath] != nil {
 		return nil
 	}
 	dependencies[importPath] = []string{}
 
-	// Stop if the directory doesn't exist. It could be because it's an built-in package or the package hasn't been downloaded.
+	// Stop if the directory doesn't exist.
+	// It could be because it's an built-in package or the package hasn't been downloaded.
 	directory := filepath.Join(srcDir, importPath)
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		return nil
