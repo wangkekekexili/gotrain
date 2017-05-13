@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -15,22 +16,36 @@ import (
 
 var logger = log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lshortfile)
 
+const (
+	formatDigraph  = "digraph"
+	formatGraphviz = "graphviz"
+)
+
 func main() {
 	goPath := os.Getenv("GOPATH")
 	if goPath == "" {
 		logger.Fatal("GOPATH must be set")
 	}
-	if len(os.Args) != 2 {
-		logger.Fatal("usage: gotrain [package]")
+
+	format := flag.String("format", "digraph", "Output format for the dependency graph. Can be one of graphviz, digraph. Defaults to digraph.")
+	flag.Parse()
+
+	// Validate arguments.
+	if len(flag.Args()) != 1 {
+		logger.Fatal("package name must be specified")
 	}
-	importPath := os.Args[1]
+	importPath := flag.Arg(0)
+	if *format != formatDigraph && *format != formatGraphviz {
+		flag.Usage()
+		return
+	}
 
 	dependencies := make(map[string][]string)
 	if err := getDependencies(filepath.Join(goPath, "src"), importPath, dependencies); err != nil {
 		logger.Fatal(err)
 	}
 
-	printGraph(os.Stdout, dependencies)
+	printGraph(*format, dependencies)
 }
 
 // getDependencies populates dependencies recursively.
@@ -91,7 +106,17 @@ func getDependencies(srcDir, importPath string, dependencies map[string][]string
 	return nil
 }
 
-func printGraph(w io.Writer, dependencies map[string][]string) {
+// printGraph outputs the dependency graph to standard output in the specified format.
+func printGraph(format string, dependencies map[string][]string) {
+	switch format {
+	case formatDigraph:
+		printDigraph(os.Stdout, dependencies)
+	case formatGraphviz:
+		printGraphviz(os.Stdout, dependencies)
+	}
+}
+
+func printDigraph(w io.Writer, dependencies map[string][]string) {
 	for from, tos := range dependencies {
 		if len(tos) == 0 {
 			continue
@@ -102,4 +127,17 @@ func printGraph(w io.Writer, dependencies map[string][]string) {
 		}
 		fmt.Fprintln(w)
 	}
+}
+
+func printGraphviz(w io.Writer, dependencies map[string][]string) {
+	fmt.Fprintln(w, "digraph G {")
+	for from, tos := range dependencies {
+		if len(tos) == 0 {
+			continue
+		}
+		for _, to := range tos {
+			fmt.Fprintf(w, "%s->%s;\n", from, to)
+		}
+	}
+	fmt.Fprintln(w, "}")
 }
