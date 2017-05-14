@@ -58,6 +58,7 @@ func main() {
 //
 // srcDir is the root directory for all golang source code.
 // importPath is like github.com/google/btree. The getDependencies call will populate dependencies which btree package depends on.
+// dependencies will be a map from unquoted import path to a slice of quoted dependencies.
 func getDependencies(srcDir, importPath string, dependencies map[string][]string, maxDepth int) error {
 	if callerFunctionName(maxDepth) == callerFunctionName(0) {
 		return nil
@@ -94,7 +95,7 @@ func getDependencies(srcDir, importPath string, dependencies map[string][]string
 			}
 			for _, im := range ast.Imports {
 				nextImportPath := im.Path.Value
-				dependencies[strconv.Quote(importPath)] = append(dependencies[strconv.Quote(importPath)], nextImportPath)
+				dependencies[importPath] = append(dependencies[importPath], nextImportPath)
 
 				nextImportPathUnquoted, err := strconv.Unquote(nextImportPath)
 				if err != nil {
@@ -139,7 +140,7 @@ func printDigraph(w io.Writer, dependencies map[string][]string) {
 		if len(tos) == 0 {
 			continue
 		}
-		fmt.Fprint(w, from, " ")
+		fmt.Fprint(w, strconv.Quote(from), " ")
 		for _, to := range tos {
 			fmt.Fprint(w, to, " ")
 		}
@@ -154,7 +155,7 @@ func printGraphviz(w io.Writer, dependencies map[string][]string) {
 			continue
 		}
 		for _, to := range tos {
-			fmt.Fprintf(w, "%s->%s;\n", from, to)
+			fmt.Fprintf(w, "%s->%s;\n", strconv.Quote(from), to)
 		}
 	}
 	fmt.Fprintln(w, "}")
