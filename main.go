@@ -28,7 +28,7 @@ func main() {
 		logger.Fatal("GOPATH must be set")
 	}
 
-	depth := flag.Int("depth", 2, "Max depth of dependency tree.")
+	depth := flag.Int("depth", 2, "Max depth of dependency tree. Must be non-negative.")
 	format := flag.String("format", "digraph", "Output format for the dependency graph. Can be one of graphviz, digraph. Defaults to digraph.")
 	flag.Parse()
 
@@ -37,6 +37,10 @@ func main() {
 		logger.Fatal("package name must be specified")
 	}
 	importPath := flag.Arg(0)
+	if *depth < 0 {
+		flag.Usage()
+		return
+	}
 	if *format != formatDigraph && *format != formatGraphviz {
 		flag.Usage()
 		return
