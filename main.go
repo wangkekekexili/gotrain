@@ -46,7 +46,7 @@ func main() {
 		return
 	}
 
-	dependencies := make(map[string][]string)
+	dependencies := make(map[string]map[string]bool)
 	if err := getDependencies(filepath.Join(goPath, "src"), importPath, dependencies, *depth); err != nil {
 		logger.Fatal(err)
 	}
@@ -58,15 +58,15 @@ func main() {
 //
 // srcDir is the root directory for all golang source code.
 // importPath is like github.com/google/btree. The getDependencies call will populate dependencies which btree package depends on.
-// dependencies will be a map from unquoted import path to a slice of quoted dependencies.
-func getDependencies(srcDir, importPath string, dependencies map[string][]string, maxDepth int) error {
+// dependencies will be a map from unquoted import path to a set of quoted dependencies.
+func getDependencies(srcDir, importPath string, dependencies map[string]map[string]bool, maxDepth int) error {
 	if callerFunctionName(maxDepth) == callerFunctionName(0) {
 		return nil
 	}
 	if dependencies[importPath] != nil {
 		return nil
 	}
-	dependencies[importPath] = []string{}
+	dependencies[importPath] = make(map[string]bool)
 
 	// Stop if the directory doesn't exist.
 	// It could be because it's an built-in package or the package hasn't been downloaded.
@@ -95,7 +95,7 @@ func getDependencies(srcDir, importPath string, dependencies map[string][]string
 			}
 			for _, im := range ast.Imports {
 				nextImportPath := im.Path.Value
-				dependencies[importPath] = append(dependencies[importPath], nextImportPath)
+				dependencies[importPath][nextImportPath] = true
 
 				nextImportPathUnquoted, err := strconv.Unquote(nextImportPath)
 				if err != nil {
@@ -126,7 +126,7 @@ func callerFunctionName(depth int) string {
 }
 
 // printGraph outputs the dependency graph to standard output in the specified format.
-func printGraph(format string, dependencies map[string][]string) {
+func printGraph(format string, dependencies map[string]map[string]bool) {
 	switch format {
 	case formatDigraph:
 		printDigraph(os.Stdout, dependencies)
@@ -135,26 +135,26 @@ func printGraph(format string, dependencies map[string][]string) {
 	}
 }
 
-func printDigraph(w io.Writer, dependencies map[string][]string) {
+func printDigraph(w io.Writer, dependencies map[string]map[string]bool) {
 	for from, tos := range dependencies {
 		if len(tos) == 0 {
 			continue
 		}
 		fmt.Fprint(w, strconv.Quote(from), " ")
-		for _, to := range tos {
+		for to := range tos {
 			fmt.Fprint(w, to, " ")
 		}
 		fmt.Fprintln(w)
 	}
 }
 
-func printGraphviz(w io.Writer, dependencies map[string][]string) {
+func printGraphviz(w io.Writer, dependencies map[string]map[string]bool) {
 	fmt.Fprintln(w, "digraph G {")
 	for from, tos := range dependencies {
 		if len(tos) == 0 {
 			continue
 		}
-		for _, to := range tos {
+		for to := range tos {
 			fmt.Fprintf(w, "%s->%s;\n", strconv.Quote(from), to)
 		}
 	}

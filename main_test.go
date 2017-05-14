@@ -11,42 +11,42 @@ import (
 func TestGetDependencies(t *testing.T) {
 	tests := []struct {
 		depth           int
-		expDependencies map[string][]string
+		expDependencies map[string]map[string]bool
 	}{
-		{0, make(map[string][]string)},
+		{0, make(map[string]map[string]bool)},
 		{
 			depth: 1,
-			expDependencies: map[string][]string{
-				"github.com/wangkekekexili/gotrain/test_apple": {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`},
+			expDependencies: map[string]map[string]bool{
+				"github.com/wangkekekexili/gotrain/test_apple": {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`: true},
 			},
 		},
 		{
 			depth: 2,
-			expDependencies: map[string][]string{
-				"github.com/wangkekekexili/gotrain/test_apple":             {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`},
-				"github.com/wangkekekexili/gotrain/test_apple/test_banana": {`"fmt"`},
+			expDependencies: map[string]map[string]bool{
+				"github.com/wangkekekexili/gotrain/test_apple":             {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`: true},
+				"github.com/wangkekekexili/gotrain/test_apple/test_banana": {`"fmt"`: true},
 			},
 		},
 		{
 			depth: 3,
-			expDependencies: map[string][]string{
-				"github.com/wangkekekexili/gotrain/test_apple":             {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`},
-				"github.com/wangkekekexili/gotrain/test_apple/test_banana": {`"fmt"`},
+			expDependencies: map[string]map[string]bool{
+				"github.com/wangkekekexili/gotrain/test_apple":             {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`: true},
+				"github.com/wangkekekexili/gotrain/test_apple/test_banana": {`"fmt"`: true},
 				"fmt": {},
 			},
 		},
 		{
 			depth: 4,
-			expDependencies: map[string][]string{
-				"github.com/wangkekekexili/gotrain/test_apple":             {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`},
-				"github.com/wangkekekexili/gotrain/test_apple/test_banana": {`"fmt"`},
+			expDependencies: map[string]map[string]bool{
+				"github.com/wangkekekexili/gotrain/test_apple":             {`"github.com/wangkekekexili/gotrain/test_apple/test_banana"`: true},
+				"github.com/wangkekekexili/gotrain/test_apple/test_banana": {`"fmt"`: true},
 				"fmt": {},
 			},
 		},
 	}
 
 	for _, test := range tests {
-		gotDependencies := make(map[string][]string)
+		gotDependencies := make(map[string]map[string]bool)
 		srcDir := filepath.Join(os.Getenv("GOPATH"), "src")
 		if err := getDependencies(srcDir, "github.com/wangkekekexili/gotrain/test_apple", gotDependencies, test.depth); err != nil {
 			t.Fatal(err)
@@ -74,8 +74,8 @@ func TestCallerFunctionName(t *testing.T) {
 
 func TestPrintDigraph(t *testing.T) {
 	var buf bytes.Buffer
-	dep := map[string][]string{
-		"apple": {`"banana"`, `"peach"`},
+	dep := map[string]map[string]bool{
+		"apple": {`"banana"`: true, `"peach"`: true},
 	}
 	expStr := "\"apple\" \"banana\" \"peach\" \n"
 
@@ -89,8 +89,8 @@ func TestPrintDigraph(t *testing.T) {
 
 func TestPrintGraphviz(t *testing.T) {
 	var buf bytes.Buffer
-	dep := map[string][]string{
-		"apple": {`"banana"`, `"peach"`},
+	dep := map[string]map[string]bool{
+		"apple": {`"banana"`: true, `"peach"`: true},
 	}
 	expStr := `digraph G {
 "apple"->"banana";
