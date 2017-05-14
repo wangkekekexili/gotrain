@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -27,6 +28,7 @@ func main() {
 		logger.Fatal("GOPATH must be set")
 	}
 
+	depth := flag.Int("depth", 2, "Max depth of dependency tree.")
 	format := flag.String("format", "digraph", "Output format for the dependency graph. Can be one of graphviz, digraph. Defaults to digraph.")
 	flag.Parse()
 
@@ -41,7 +43,7 @@ func main() {
 	}
 
 	dependencies := make(map[string][]string)
-	if err := getDependencies(filepath.Join(goPath, "src"), importPath, dependencies); err != nil {
+	if err := getDependencies(filepath.Join(goPath, "src"), importPath, dependencies, *depth); err != nil {
 		logger.Fatal(err)
 	}
 
@@ -52,7 +54,10 @@ func main() {
 //
 // srcDir is the root directory for all golang source code.
 // importPath is like github.com/google/btree. The getDependencies call will populate dependencies which btree package depends on.
-func getDependencies(srcDir, importPath string, dependencies map[string][]string) error {
+func getDependencies(srcDir, importPath string, dependencies map[string][]string, maxDepth int) error {
+	if callerFunctionName(maxDepth) == callerFunctionName(0) {
+		return nil
+	}
 	if dependencies[importPath] != nil {
 		return nil
 	}
@@ -98,12 +103,21 @@ func getDependencies(srcDir, importPath string, dependencies map[string][]string
 	}
 
 	for n := range next {
-		if err := getDependencies(srcDir, n, dependencies); err != nil {
+		if err := getDependencies(srcDir, n, dependencies, maxDepth); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func callerFunctionName(depth int) string {
+	pc, _, _, ok := runtime.Caller(depth + 1)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		return details.Name()
+	}
+	return "<unknown>"
 }
 
 // printGraph outputs the dependency graph to standard output in the specified format.
