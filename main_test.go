@@ -9,6 +9,8 @@ import (
 )
 
 func TestGetDependencies(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		depth           int
 		expDependencies map[string]map[string]bool
@@ -62,6 +64,8 @@ func callCallerFunctionNameInside() string {
 }
 
 func TestCallerFunctionName(t *testing.T) {
+	t.Parallel()
+
 	// The result should be deterministic.
 	if callerFunctionName(0) != callerFunctionName(0) {
 		t.Fatal("callerFunctionName should be deterministic")
@@ -73,6 +77,8 @@ func TestCallerFunctionName(t *testing.T) {
 }
 
 func TestPrintDigraph(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	dep := map[string]map[string]bool{
 		"apple": {`"banana"`: true, `"peach"`: true},
@@ -88,6 +94,8 @@ func TestPrintDigraph(t *testing.T) {
 }
 
 func TestPrintGraphviz(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	dep := map[string]map[string]bool{
 		"apple": {`"banana"`: true, `"peach"`: true},
