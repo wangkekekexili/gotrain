@@ -81,9 +81,9 @@ func TestPrintDigraph(t *testing.T) {
 
 	var buf bytes.Buffer
 	dep := map[string]map[string]bool{
-		"apple": {`"banana"`: true, `"peach"`: true},
+		"apple": {`"banana"`: true},
 	}
-	expStr := "\"apple\" \"banana\" \"peach\" \n"
+	expStr := "\"apple\" \"banana\" \n"
 
 	printDigraph(&buf, dep)
 
@@ -98,11 +98,10 @@ func TestPrintGraphviz(t *testing.T) {
 
 	var buf bytes.Buffer
 	dep := map[string]map[string]bool{
-		"apple": {`"banana"`: true, `"peach"`: true},
+		"apple": {`"banana"`: true},
 	}
 	expStr := `digraph G {
 "apple"->"banana";
-"apple"->"peach";
 }
 `
 
